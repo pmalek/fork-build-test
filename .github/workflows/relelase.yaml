@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      latest:
+        description: Whether to tag this release latest
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+
+  build:
+    uses: ./.github/workflows/build-workflow.yaml
+    secrets:
+      token: ${{ secrets.DOCKER_PAT }}
+    with:
+      username: ${{ vars.DOCKER_USERNAME }}
+      registry: docker.io
+      image-name: ${{ github.repository }}
+      latest: ${{ inputs.latest }}
+      push: true
