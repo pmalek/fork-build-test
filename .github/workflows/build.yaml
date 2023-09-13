@@ -1,41 +1,93 @@
 name: Build container image
-run-name: Build container image ${{ github.head_ref || github.sha }}
+# This run-name will contain the branch name when run with pull_request or
+# pull_request_target event.
+# Otherwise it will contain the tag name if present or SHA.
+run-name: Build container image ${{ github.head_ref || ( github.ref_type == 'tag' && github.ref_name || github.sha ) }}
 
 concurrency:
   # Run only for most recent commit in PRs but for all tags and commits on main
   # Ref: https://docs.github.com/en/actions/using-jobs/using-concurrency
-  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  group: ${{ github.workflow }}-${{ github.head_ref || ( github.ref_type == 'tag' && github.ref_name || github.sha ) }}
   cancel-in-progress: true
 
 on:
   push:
     branches:
-    - 'main'
+    - '*'
+    tags:
+    - '*'
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        arch:
-        - amd64
-        - arm64
-    uses: ./.github/workflows/build-workflow.yaml
-    with:
-      image-name: ${{ github.repository }}
-      push: false
-      platforms: linux/${{ matrix.arch }}
-      upload-artifact: linux_${{ matrix.arch }}
+  # build:
+  #   strategy:
+  #     matrix:
+  #       arch:
+  #       - amd64
+  #       - arm64
+  #   uses: ./.github/workflows/build-workflow.yaml
+  #   secrets:
+  #     token: ${{ secrets.GH_PAT }}
+  #   with:
+  #     registry: ghcr.io
+  #     image-name: ${{ github.repository }}
+  #     push: true
+  #     platforms: linux/${{ matrix.arch }}
+  #     # outputs: type=docker,dest=/tmp/linux_${{ matrix.arch }}.tar
+  #     # upload-artifact: /tmp/linux_${{ matrix.arch }}.tar
 
-  push:
-    needs:
-    - build
+  # build-multi-architecture:
+  #   needs:
+  #     - build
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 10
+  #   steps:
+  #     - uses: docker/login-action@v2
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GH_PAT }}
+  #     - uses: docker/metadata-action@v4
+  #       id: metadata
+  #       with:
+  #         images: ghcr.io/${{ github.repository }}
+  #     - uses: int128/docker-manifest-create-action@v1
+  #       with:
+  #         tags: ${{ steps.metadata.outputs.tags }}
+  #         suffixes: |
+  #           -linux-amd64
+  #           -linux-arm64
+
+  build:
     uses: ./.github/workflows/build-workflow.yaml
     secrets:
-      token: ${{ secrets.GH_PAT }}
+      token: ${{ secrets.DOCKER_PAT }}
     with:
-      registry: ghcr.io
+      username: ${{ vars.DOCKER_USERNAME }}
+      registry: docker.io
       image-name: ${{ github.repository }}
       push: true
-      platforms: linux/${{ matrix.arch }}
-      upload-artifact: linux_${{ matrix.arch }}
-      # - registry.hub.docker.com
+      # outputs: type=docker,dest=/tmp/linux_${{ matrix.arch }}.tar
+      # upload-artifact: /tmp/linux_${{ matrix.arch }}.tar
+
+  build-no-push:
+    uses: ./.github/workflows/build-workflow.yaml
+    with:
+      registry: docker.io
+      image-name: ${{ github.repository }}
+      push: false
+      # outputs: type=docker,dest=/tmp/linux_${{ matrix.arch }}.tar
+      # upload-artifact: /tmp/linux_${{ matrix.arch }}.tar
+
+  # push:
+  #   needs:
+  #   - build
+  #   uses: ./.github/workflows/build-workflow.yaml
+  #   secrets:
+  #     token: ${{ secrets.GH_PAT }}
+  #   with:
+  #     registry: ghcr.io
+  #     image-name: ${{ github.repository }}
+  #     push: true
+  #     platforms: linux/${{ matrix.arch }}
+  #     upload-artifact: linux_${{ matrix.arch }}
+  #     # - registry.hub.docker.com
