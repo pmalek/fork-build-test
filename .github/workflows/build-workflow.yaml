@@ -31,10 +31,6 @@ on:
         required: false
         type: string
         default: distroless
-      platforms:
-        description: List of target platforms for build.
-        required: true
-        type: string
       outputs:
         description: Set outputs for docker/build-push-action.
         required: false
@@ -58,8 +54,15 @@ on:
     
 jobs:
   build:
-    name: Build operator image(s)
+    name: Build image(s)
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform:
+        # Whatever gets changed here should be changed in the multi-arch job below.
+        - linux/amd64
+        - linux/arm64
 
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
@@ -69,12 +72,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Log in to the Container registry
-        if: ${{ inputs.registry != '' }}
+        if: ${{ inputs.push }}
         uses: docker/login-action@v3.0.0
         with:
           registry: ${{ inputs.registry }}
-          username: ${{ github.actor }}
+          username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.token }}
  
       - name: Set up QEMU
@@ -89,6 +100,7 @@ jobs:
         with:
           labels: |
             org.opencontainers.image.title=KongGatewayOperator
+          #${{ inputs.registry }}/
           images: |
             ${{ inputs.image-name }}
           # generate Docker tags based on the following events/attributes
@@ -100,6 +112,11 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+          # avoid overwriting the latest tag because metadata-action does not
+          # add a suffix to it
+          flavor: latest=false,suffix=-${{ matrix.platform }}
+
+      - uses: docker/setup-buildx-action@v2
 
       - name: Build image
         uses: docker/build-push-action@v5.0.0
@@ -110,7 +127,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           target: ${{ inputs.target }}
-          platforms: ${{ inputs.platforms }}
+          platforms: ${{ matrix.platform }}
           build-args: |
             TAG=${{ steps.meta.outputs.version }}
             COMMIT=${{ github.sha }}
@@ -130,3 +147,38 @@ jobs:
         if: ${{ inputs.upload-artifact }}
         id: set-artifact
         run: echo "artifact=${{ inputs.upload-artifact }}" >> $GITHUB_OUTPUT
+
+
+  build-multi-arch:
+    name: Build multi-arch manifest
+    runs-on: ubuntu-latest
+    if: ${{ inputs.push }}
+
+    needs:
+      - build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - uses: docker/metadata-action@v5.0.0
+        id: metadata
+        with:
+          images: ${{ inputs.image-name }}
+
+      - name: Log in to the Container registry
+        if: ${{ inputs.push }}
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.token }}
+
+      - uses: int128/docker-manifest-create-action@v1
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+          suffixes: |
+            -linux-amd64
+            -linux-arm64
