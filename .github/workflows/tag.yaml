@@ -1,0 +1,29 @@
+name: Build container image
+# This run-name will contain the branch name when run with pull_request or
+# pull_request_target event.
+# Otherwise it will contain the tag name if present or SHA.
+run-name: Build container image ${{ github.head_ref || ( github.ref_type == 'tag' && github.ref_name || github.sha ) }}
+
+concurrency:
+  # Run only for most recent commit in PRs but for all tags and commits on main
+  # Ref: https://docs.github.com/en/actions/using-jobs/using-concurrency
+  group: ${{ github.workflow }}-${{ github.head_ref || ( github.ref_type == 'tag' && github.ref_name || github.sha ) }}
+  cancel-in-progress: true
+
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+
+  build:
+    uses: ./.github/workflows/build-workflow.yaml
+    secrets:
+      token: ${{ secrets.DOCKER_PAT }}
+    with:
+      username: ${{ vars.DOCKER_USERNAME }}
+      registry: docker.io
+      image-name: ${{ github.repository }}
+      latest: true
+      push: true
