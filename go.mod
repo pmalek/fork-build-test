@@ -2,10 +2,9 @@ module fork-build-test
 
 go 1.21.1
 
-require github.com/kong/kubernetes-telemetry v0.1.0
+require github.com/kong/kubernetes-telemetry v0.0.6
 
 require (
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bombsimon/logrusr/v3 v3.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
