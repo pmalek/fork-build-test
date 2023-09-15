@@ -108,15 +108,6 @@ jobs:
             ${{ runner.os }}-go-${{ matrix.arch }}-
             ${{ runner.os }}-go-
 
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.arch }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.arch }}-
-            ${{ runner.os }}-buildx-
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -152,8 +143,8 @@ jobs:
           # Ref: https://docs.docker.com/build/ci/github-actions/test-before-push/
           load: ${{ !inputs.push }}
           file: ${{ inputs.file }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           target: ${{ inputs.target }}
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
           build-args: |
