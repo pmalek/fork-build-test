@@ -14,24 +14,21 @@ ENV GOMODCACHE=$GOMODCACHE
 # Use cache mounts to cache Go dependencies and bind mounts to avoid unnecessary
 # layers when using COPY instructions for go.mod and go.sum.
 # https://docs.docker.com/build/guide/mounts/
-RUN --mount=type=cache,target=$GOMODCACHE \
+RUN --mount=type=bind,target=$GOMODCACHE \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=bind,source=go.mod,target=go.mod \
     go mod download -x
 
-COPY main.go main.go
-COPY .git/ .git/
-
 ARG TARGETARCH
 
-RUN --mount=type=cache,target=$GOCACHE \
-    --mount=type=cache,target=$GOMODCACHE \
+RUN --mount=type=bind,target=$GOCACHE \
+    --mount=type=bind,target=$GOMODCACHE \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=bind,source=go.mod,target=go.mod \
     go env
 
-RUN --mount=type=cache,target=$GOCACHE \
-    --mount=type=cache,target=$GOMODCACHE \
+RUN --mount=type=bind,target=$GOCACHE \
+    --mount=type=bind,target=$GOMODCACHE \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=bind,source=go.mod,target=go.mod \
     ls -la $GOMODCACHE
@@ -39,15 +36,16 @@ RUN --mount=type=cache,target=$GOCACHE \
 # Use cache mounts to cache Go dependencies and bind mounts to avoid unnecessary
 # layers when using COPY instructions for go.mod and go.sum.
 # https://docs.docker.com/build/guide/mounts/
-RUN --mount=type=cache,target=$GOCACHE \
-    --mount=type=cache,target=$GOMODCACHE \
+RUN --mount=type=bind,target=$GOCACHE \
+    --mount=type=bind,target=$GOMODCACHE \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=bind,source=go.mod,target=go.mod \
+    --mount=type=bind,source=main.go,target=main.go \
     CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" \
     go build -o manager -ldflags "-s -w" .
 
-RUN --mount=type=cache,target=$GOCACHE \
-    --mount=type=cache,target=$GOMODCACHE \
+RUN --mount=type=bind,target=$GOCACHE \
+    --mount=type=bind,target=$GOMODCACHE \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=bind,source=go.mod,target=go.mod \
     ls -la $GOMODCACHE
