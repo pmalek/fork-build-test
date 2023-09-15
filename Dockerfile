@@ -24,6 +24,18 @@ COPY .git/ .git/
 
 ARG TARGETARCH
 
+RUN --mount=type=cache,target=$GOCACHE \
+    --mount=type=cache,target=$GOMODCACHE \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    go env
+
+RUN --mount=type=cache,target=$GOCACHE \
+    --mount=type=cache,target=$GOMODCACHE \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    ls -la $GOMODCACHE
+
 # Use cache mounts to cache Go dependencies and bind mounts to avoid unnecessary
 # layers when using COPY instructions for go.mod and go.sum.
 # https://docs.docker.com/build/guide/mounts/
@@ -33,6 +45,12 @@ RUN --mount=type=cache,target=$GOCACHE \
     --mount=type=bind,source=go.mod,target=go.mod \
     CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" \
     go build -o manager -ldflags "-s -w" .
+
+RUN --mount=type=cache,target=$GOCACHE \
+    --mount=type=cache,target=$GOMODCACHE \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    ls -la $GOMODCACHE
 
 # ------------------------------------------------------------------------------
 # Distroless (default)
