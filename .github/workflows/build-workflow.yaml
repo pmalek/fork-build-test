@@ -108,6 +108,9 @@ jobs:
             ${{ runner.os }}-go-${{ matrix.arch }}-
             ${{ runner.os }}-go-
 
+      - run: ls -la ${{ env.GOCACHE }}
+      - run: ls -la ${{ env.GOMODCACHE }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -157,6 +160,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: ${{ inputs.outputs }}
+
+      - run: ls -la ${{ env.GOCACHE }}
+      - run: ls -la ${{ env.GOMODCACHE }}
 
       - name: Echo tags
         run: |
