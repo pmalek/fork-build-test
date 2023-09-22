@@ -8,6 +8,10 @@ on:
         required: true
         default: false
         type: boolean
+      tag:
+        description: Tag to use for tagging the built container images.
+        required: false
+        type: string
 
 jobs:
 
@@ -21,3 +25,4 @@ jobs:
       image-name: ${{ github.repository }}
       latest: ${{ inputs.latest }}
       push: true
+      tag: ${{ inputs.tag }}
