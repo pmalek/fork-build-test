@@ -74,13 +74,13 @@ jobs:
       patch: ${{ steps.semver_parser.outputs.patch }}
       prerelease: ${{ steps.semver_parser.outputs.prerelease }}
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.tag != "" }}
+    if: ${{ inputs.tag != '' }}
     steps:
       - uses: mukunku/tag-exists-action@v1.3.0
         id: check-tag
         name: check if tag already exists
         with:
-          tag: ${{ github.event.inputs.tag }}
+          tag: ${{ inputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -97,7 +97,7 @@ jobs:
         id: semver_parser
         uses: booxmedialtd/ws-action-parse-semver@v1.4.7
         with:
-          input_string: ${{ github.event.inputs.tag }}
+          input_string: ${{ inputs.tag }}
           version_extractor_regex: 'v(.*)$'
 
   build:
