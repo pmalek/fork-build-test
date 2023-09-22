@@ -162,14 +162,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Add standard tags
-        if: ${{ inputs.tag != "" }}
+        if: ${{ inputs.tag != '' }}
         run: |
           echo 'TAGS_STANDARD<<EOF' >> $GITHUB_ENV
           echo 'type=raw,value=${{ needs.semver.outputs.fullversion }}' >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
       - name: Add major.minor tag
-        if: ${{ inputs.tag != "" }}
+        if: ${{ inputs.tag != '' }}
         run: |
           echo 'TAGS_SUPPLEMENTAL<<EOF' >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
