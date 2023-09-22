@@ -1,0 +1,17 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: '* * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  build-push-images:
+    uses: ./.github/workflows/__build-workflow.yaml
+    secrets:
+      token: ${{ secrets.DOCKERHUB_PUSH_TOKEN }}
+    with:
+      username: ${{ vars.DOCKERHUB_PUSH_USERNAME  }}
+      registry: docker.io
+      image-name: ${{ github.repository }}
+      push: true

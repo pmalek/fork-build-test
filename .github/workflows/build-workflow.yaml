@@ -74,6 +74,7 @@ jobs:
       patch: ${{ steps.semver_parser.outputs.patch }}
       prerelease: ${{ steps.semver_parser.outputs.prerelease }}
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.tag != "" }}
     steps:
       - uses: mukunku/tag-exists-action@v1.3.0
         id: check-tag
@@ -161,15 +162,17 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Add standard tags
+        if: ${{ inputs.tag != "" }}
         run: |
           echo 'TAGS_STANDARD<<EOF' >> $GITHUB_ENV
           echo 'type=raw,value=${{ needs.semver.outputs.fullversion }}' >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
       - name: Add major.minor tag
-        if: ${{ needs.semver.outputs.prerelease == '' }}
+        if: ${{ inputs.tag != "" }}
         run: |
           echo 'TAGS_SUPPLEMENTAL<<EOF' >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
           echo 'type=raw,value=${{ needs.semver.outputs.major }}.${{ needs.semver.outputs.minor }}' >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
@@ -184,8 +187,7 @@ jobs:
             type=schedule,pattern=nightly
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=sha
-            ${{ env.TAGS_STANDARD }}
-            ${{ env.TAGS_SUPPLEMENTAL }}
+            ${{ env.TAGS_STANDARD }}${{ env.TAGS_SUPPLEMENTAL }}
           flavor: latest=${{ inputs.latest }},suffix=-${{ matrix.arch  }}
 
       - name: Build image
@@ -260,15 +262,17 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Add standard tags
+        if: ${{ inputs.tag == '' }}
         run: |
           echo 'TAGS_STANDARD<<EOF' >> $GITHUB_ENV
           echo 'type=raw,value=${{ needs.semver.outputs.fullversion }}' >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
       - name: Add major.minor tag
-        if: ${{ needs.semver.outputs.prerelease == '' }}
+        if: ${{ inputs.tag == '' }}
         run: |
           echo 'TAGS_SUPPLEMENTAL<<EOF' >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
           echo 'type=raw,value=${{ needs.semver.outputs.major }}.${{ needs.semver.outputs.minor }}' >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 

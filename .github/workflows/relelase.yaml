@@ -1,4 +1,5 @@
 name: Release
+run-name: "Release ${{ format('{0}', github.event.inputs.tag) }}"
 
 on:
   workflow_dispatch:
@@ -14,6 +15,7 @@ on:
         type: string
 
 jobs:
+
 
   build:
     uses: ./.github/workflows/build-workflow.yaml
